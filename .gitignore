@@ -1,0 +1,5 @@
+build/
+docs/
+.venv/
+__pycache__/
+flight-tests/
