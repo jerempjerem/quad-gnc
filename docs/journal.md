@@ -145,3 +145,25 @@
 - **Prochaine session** : relire le cours et le reprendre en notes (tablette) ; chat « Questions · cours TP 1.2 » ; exercices §3-§6 ; mavsim ch. 4 ; puis **TP 0.4 en parallèle** (carte reçue le 12, non démarrée — flash + M10/H-Flow conditionnent la commande 2) et TP 1.3.
 - **Commande 2** : à passer entre le 15 et le 19 septembre selon l'avancement (carte reçue le 12, flashée et vérifiée avant) ; le 19 est la butée, au-delà le montage glisse en S2.
 - **Jokers** : aucun (les étapes 3-4 données en cours relèvent du changement de méthode, pas d'un joker ; corrections locales sur l'amplitude exponentielle et le sens de `J_r`).
+
+## 2026-09-14 — S0 — TP 0.4 étape 1 Flash et vérification des IMU — 0 h 40 (prévu 1 h 10 sur 6 h)
+
+- **Objectif** : carte flashée sur v1.17.0 figé, deux IMU vues, état de référence (paramètres, identifiants) versionné.
+- **Fait** :
+  - `make px4_fmu-v6c_default upload` OK, USB seul ; `ver all` : hash `d6f12ad1`, branche `frozen-v1.17.0`, toolchain 13.2.1, conforme à `versions.md` ; HW type `V6C002002` ; `PX4GUID 0006000000003132343830345115001e002a` → `docs/versions.md` ;
+  - `uorb top -1` : 2 instances `sensor_gyro` (667 / 810 Hz) et `sensor_accel` (815 / 810 Hz), `_fifo` idem, `#Q` = 8 ;
+  - `listener` : IMU 0 = **BMI088** (`device_id` 6684682 gyro 0x66, 6946826 accel 0x6A ; deux dies, T gyro = nan, T accel 36,5 °C) ; IMU 1 = **ICM-42688-P** (`device_id` 2490378 partagé, 0x26 ; T 38,3 °C) ;
+  - `icm42688p status` : FIFO 1250 µs (800 Hz) ; `bmi088 -A` 1250 µs, `-G` 1500 µs (666,7 Hz) ; 0 overflow partout ;
+  - `samples` par message : ICM 10 (8 kHz interne), BMI088 gyro 3 (2 kHz), accel 2 (1,6 kHz) ;
+  - paramètres → `px4/params/2026-09-14_6cmini_v1.17.0_stock.params` (export texte QGC) ; `param show -c` : 42 paramètres hors défaut = calibration usine Holybro (accel, gyro, mag interne IST8310, baro MS5611, niveau `SENS_BOARD_X/Y_OFF` −3,0°/+2,4°) + `SYS_AUTOSTART 4001` (Generic Quadcopter) — le fichier exporté est donc stock **+ calibration usine**.
+- **Bloqué sur** : `bmi055 status` → « Not running » : la révision `V6C002002` embarque un BMI088, pas un BMI055 (`boards/px4/fmu-v6c/init/rc.board_sensors`, v1.17.0) ; `bmi088 status` exige `-A` ou `-G`.
+- **Décision** :
+  - le numéro d'instance uORB n'identifie pas le chip (ordre de démarrage des pilotes) : toujours `device_id` ;
+  - calibration usine et cadre 4001 conservés, rien recalibré sur carte nue : tout est refait sur le drone monté au TP 3.4 ; « rien n'arme sans cadre » ne tient plus, ce sont les prechecks qui bloquent — log « from boot » maintenu ;
+  - `sensor_gyro`/`sensor_accel` sont bruts, les `CAL_*` s'appliquent en aval dans `sensors` : Allan n'en dépend pas ;
+  - pas de `param export` dans nsh (`param save <file>` = binaire) : l'export versionné est le texte QGC (Parameters → Tools → Save to file) ;
+  - document maître à corriger (chat Outil) : TP 0.4 « `param export` » → export QGC ; TP 2.1 datasheet **BMI088** au lieu de BMI055 ;
+  - pour TP 2.1 : `sensor_gyro` = moyenne de `samples` échantillons, bruit brut par échantillon dans `_fifo` → profils « high rate » + « sensor comparison » tous les deux.
+- **Prochaine session** : TP 0.4 étape 2 (M10 sur GPS1 : `listener sensor_gps`, `sensor_mag`, log statique 20-30 min avec fix).
+- **Commande 2** : conditionnée aux étapes 2-3, butée le 19.
+- **Jokers** : aucun.
