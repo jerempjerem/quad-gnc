@@ -1,0 +1,3 @@
+- https://docs.px4.io/v1.17/en/sim_gazebo_gz/#multi-vehicle-simulation
+- https://github.com/PX4/pyulog
+- https://www.cds.caltech.edu/~murray/books/AM08/pdf/fbs-modeling_24Jul2020.pdf
