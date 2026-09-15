@@ -167,3 +167,23 @@
 - **Prochaine session** : TP 0.4 étape 2 (M10 sur GPS1 : `listener sensor_gps`, `sensor_mag`, log statique 20-30 min avec fix).
 - **Commande 2** : conditionnée aux étapes 2-3, butée le 19.
 - **Jokers** : aucun.
+
+## 2026-09-15 — S0 — TP 0.4 étape 2 M10 sur GPS1 — 1 h 20 (prévu 1 h 10)
+
+- **Objectif** : M10 reconnu sur GPS1, fix 3D lu, mag externe identifiée, premier nuage GNSS statique logué pour le TP 3.2a.
+- **Fait** :
+  - `SDLOG_PROFILE` 1 → 2051 (défaut + replay EKF2 + capteurs pleine cadence), reboot depuis le nsh ;
+  - M10 : UBX sur `/dev/ttyS0` (GPS1), 115200 bauds, 10,01 Hz ; firmware SPG 5.10, protocole 34.10 ; `device_id` 10813445 (0xA5, série 0) → `versions.md` ;
+  - fix 3D en chambre, fenêtre ouverte : 11-13 satellites, eph 0,39-0,42 m, epv 0,66-0,68 m, sAcc 0,16-0,18 m/s, hdop 1,2, jamming/spoofing OK, tous les seuils `EKF2_REQ_*` passés ; `altitude_ellipsoid − altitude_msl` = 45,868 m constant (ondulation du géoïde, modèle embarqué) ; entre deux captures à 42 s : ~0,9 m horizontal, 2,2 m vertical → erreur lente vue en direct ;
+  - deux `sensor_mag` : instance 0 = IST8310 du M10 (I2C1, 0x0E, `device_id` 396809, rotation pilote `-R 10`) ; instance 1 = IST8310 interne 6C (I2C4, 0x0C, `device_id` 396321, démarré `-X` donc « externe » pour PX4) ; test de rotation du M10 seul : l'instance 0 bouge ; normes 0,46 / 0,51 G pour 0,49 attendu (WMM ≈ 50° N) ;
+  - log statique `flight-tests/bench/2026-09-15_m10_static.ulg` + `.md` : 13:14:45 → 14:35:49 locale, 1 h 21 min 04 s, 0 dropout, `sensor_gps` 45 678 (9,39 Hz), `sensor_mag` 46,7 / 46,3 Hz, `sensor_combined` 202 Hz, EKF2 stock présent (innovations, `aid_src`) ;
+  - exercices : R_pos / R_vel sans et avec planchers (ex. 1) ; 1/√(2N) = 0,58 % et N_eff = 25 → 14 % avec τ_c = 60 s, log réel 7,9 % (ex. 2) ; signes du mag selon montage, norme aveugle aux rotations (ex. 3) — prédiction (0,20 ; 0 ; +0,45) G et comparaison aux deux instances **données en synthèse, non dérivées**.
+- **Bloqué sur** :
+  - R non défini dans le cours v1 → v1.1 ; plancher vertical EKF2 = 1,5 × `EKF2_GPS_P_NOISE`, vitesse verticale × 1,5², plafond `EKF2_NOAID_NOISE` : absents de la v1, corrigés (terme d recalculé par le tuteur après tentative) ;
+  - présentation : 0,152 pour 0,15 m² (chiffres significatifs), repère absent sur les matrices ;
+  - `sensor_gps` logué à 9,39 Hz au lieu de 10,01 (~6 %) — hypothèse : polling du logger ; histogramme Δt au TP 3.2a ;
+  - mag M10 : inclinaison apparente 54° et direction horizontale à ~90° de la 6C — hypothèses : fer dur non compensé et/ou `-R 10` inadaptée au M10 ; à trancher au TP 3.4.
+- **Décision** : altitude MSL ou ellipsoïdale : choix au TP 3.2a, dans `conventions.md` ; `CAL_MAGn_PRIO` à régler à la main au TP 3.4 (les deux mags sont « externes ») ; profil 2051 gardé pour l'étape 3, profil Allan réglé à l'étape 4 (`sensor_gyro/accel` à 1 Hz dans 2051) ; bruit GNSS au TP 3.2a : partie rapide → R, partie lente → biais corrélé ou limite documentée ; `GPS_UBX_DYNMODEL` reste à 7.
+- **Prochaine session** : TP 0.4 étape 3 — H-Flow, chat « S0 · TP 0.4 · étape 3 H-Flow » ; remplir les `___` du `.md` du log ; ajouter le cours v1.1 aux connaissances.
+- **Commande 2** : à passer avant le 19 ; M10 validé, reste l'H-Flow.
+- **Jokers** : aucun (ex. 3 conclue en synthèse pour budget ; terme vertical de l'ex. 1 corrigé après tentative, omission du cours).
